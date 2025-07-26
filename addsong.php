@@ -21,19 +21,41 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // --- Check user token ---
 $user = authenticate();
 
-// --- Get request data ---
-$data = json_decode(file_get_contents("php://input"), true);
-$title = trim($data['title'] ?? '');
-$genre = trim($data['genre'] ?? '');
-$file_url = trim($data['file_url'] ?? '');
-$cover_url = trim($data['cover_url'] ?? '');
-$album_id = $data['album_id'] ?? null;
+// --- Handle form data ---
+$title = trim($_POST['title'] ?? '');
+$genre = trim($_POST['genre'] ?? '');
+$album_id = $_POST['album_id'] ?? null;
 
-if (!$title || !$file_url) {
+if (!$title || !isset($_FILES['song_file'])) {
     http_response_code(400);
-    echo json_encode(["error" => "Title and file_url are required"]);
+    echo json_encode(["error" => "Title and song_file are required"]);
     exit();
 }
+
+// --- File handling ---
+$uploadDir = __DIR__ . '/assets/records/';
+if (!is_dir($uploadDir)) {
+    mkdir($uploadDir, 0777, true);
+}
+
+$songTmp = $_FILES['song_file']['tmp_name'];
+$songExt = pathinfo($_FILES['song_file']['name'], PATHINFO_EXTENSION);
+$songName = uniqid('song_', true) . '.' . $songExt;
+$songPath = $uploadDir . $songName;
+move_uploaded_file($songTmp, $songPath);
+
+// Cover file optional
+$cover_url = null;
+if (isset($_FILES['cover_file'])) {
+    $coverTmp = $_FILES['cover_file']['tmp_name'];
+    $coverExt = pathinfo($_FILES['cover_file']['name'], PATHINFO_EXTENSION);
+    $coverName = uniqid('cover_', true) . '.' . $coverExt;
+    move_uploaded_file($coverTmp, $uploadDir . $coverName);
+    $cover_url = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . '/assets/records/' . $coverName;
+}
+
+// Final URLs
+$file_url = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . '/assets/records/' . $songName;
 
 try {
     $stmt = $pdo->prepare("
@@ -45,7 +67,7 @@ try {
     $song = $stmt->fetch(PDO::FETCH_ASSOC);
 
     echo json_encode([
-        "message" => "Song added successfully",
+        "message" => "Song uploaded and saved successfully",
         "song" => $song
     ]);
 } catch (PDOException $e) {
