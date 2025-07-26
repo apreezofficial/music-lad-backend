@@ -66,7 +66,8 @@ try {
             PRIMARY KEY (playlist_id, music_id)
         );
     ");
-
+//extras
+$pdo->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS token TEXT;");
     echo "All tables created successfully!";
 } catch (PDOException $e) {
     echo "Error creating tables: " . $e->getMessage();
