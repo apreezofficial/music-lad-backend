@@ -14,15 +14,14 @@ $dbname = $_ENV['DB_NAME'];
 $user = $_ENV['DB_USER'];
 $password = $_ENV['DB_PASSWORD'];
 
-// DSN (with SSL optional)
 $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;sslmode=prefer";
 
 try {
     $pdo = new PDO($dsn, $user, $password, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
-    echo "Connected successfully to remote PostgreSQL!";
+//    echo "Connected successfully to remote PostgreSQL!";
 } catch (PDOException $e) {
-    echo "Connection failed: " . $e->getMessage();
+ //   echo "Connection failed: " . $e->getMessage();
     exit;
 }
